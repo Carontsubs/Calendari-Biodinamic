@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calendari Biodinàmic Lunar</title>
+<style>
+:root {
+  --bg: #f7f5ef;
+  --bg-card: #ffffff;
+  --bg-sec: #eeecea;
+  --text: #1e1d18;
+  --text-sec: #6b6a63;
+  --text-ter: #9a9890;
+  --border: #dddbd3;
+  --border-med: #c8c6be;
+  --green: #3a7a3a;
+  --green-bg: #eaf3ea;
+  --blue: #1a5fa8;
+  --blue-bg: #e4eef8;
+  --amber: #8a5c00;
+  --amber-bg: #fdf0d0;
+  --red: #a02020;
+  --red-bg: #fce8e8;
+  --gold: #c17800;
+  --gold-bg: #fff3d0;
+  --purple: #5a3a9a;
+  --purple-bg: #eeebfa;
+  --teal: #0a6060;
+  --teal-bg: #e0f5f5;
+  --radius: 10px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1a1917;
+    --bg-card: #242320;
+    --bg-sec: #2e2d29;
+    --text: #f0ede4;
+    --text-sec: #a09e96;
+    --text-ter: #6a6860;
+    --border: #3a3830;
+    --border-med: #4a4840;
+    --green-bg: #1a2e1a; --green: #6aaa6a;
+    --blue-bg: #0e1e38; --blue: #6090d0;
+    --amber-bg: #2a1e00; --amber: #d0a030;
+    --red-bg: #2a1010; --red: #e06060;
+    --gold-bg: #281a00; --gold: #e0b040;
+    --purple-bg: #1e1530; --purple: #9070d0;
+    --teal-bg: #001e1e; --teal: #40b0b0;
+    --shadow: 0 1px 4px rgba(0,0,0,0.3);
+  }
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* LAYOUT */
+.app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+@media (max-width: 750px) { .app { grid-template-columns: 1fr; } }
+
+/* SIDEBAR */
+.sidebar {
+  background: var(--bg-card); border-right: 1px solid var(--border);
+  padding: 1.5rem 1rem; position: sticky; top: 0; height: 100vh;
+  overflow-y: auto; display: flex; flex-direction: column; gap: 1.2rem;
+}
+@media (max-width: 750px) { .sidebar { height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border); } }
+.logo { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; color: var(--text); }
+.logo .moon-ico { font-size: 22px; }
+.logo small { display: block; font-size: 11px; font-weight: 400; color: var(--text-ter); }
+
+/* FASE ACTUAL */
+.current-box {
+  background: var(--bg-sec); border-radius: var(--radius);
+  padding: 12px; font-size: 12px; color: var(--text-sec);
+}
+.current-box .big { font-size: 32px; text-align: center; margin-bottom: 4px; }
+.current-box .phase-name { font-size: 13px; font-weight: 500; color: var(--text); text-align: center; }
+.current-box .phase-detail { font-size: 11px; color: var(--text-ter); text-align: center; margin-top: 2px; }
+
+/* LLEGENDA */
+.legend { display: flex; flex-direction: column; gap: 6px; }
+.legend-title { font-size: 11px; font-weight: 500; color: var(--text-ter); text-transform: uppercase; letter-spacing: 0.06em; }
+.legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-sec); }
+.dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+/* NAV MES */
+.main { padding: 1.5rem; }
+.month-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1.2rem;
+}
+.month-nav h2 { font-size: 20px; font-weight: 500; color: var(--text); text-transform: capitalize; }
+.nav-btn {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 6px 14px; cursor: pointer;
+  font-size: 14px; color: var(--text); transition: background 0.15s;
+}
+.nav-btn:hover { background: var(--bg-sec); }
+.today-btn {
+  background: transparent; border: 1px solid var(--border-med);
+  border-radius: var(--radius); padding: 5px 12px; cursor: pointer;
+  font-size: 12px; color: var(--text-sec);
+}
+
+/* GRID SETMANA */
+.weekdays {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  gap: 4px; margin-bottom: 4px;
+}
+.weekday { text-align: center; font-size: 11px; font-weight: 500; color: var(--text-ter); padding: 4px 0; }
+
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+
+.cal-day {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); min-height: 90px; padding: 6px;
+  cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s;
+  position: relative; overflow: hidden;
+}
+.cal-day:hover { border-color: var(--border-med); box-shadow: var(--shadow); }
+.cal-day.other-month { background: var(--bg); opacity: 0.45; }
+.cal-day.today { border-color: var(--blue); border-width: 2px; }
+.cal-day.selected { border-color: var(--green); border-width: 2px; box-shadow: 0 0 0 3px var(--green-bg); }
+.cal-day.repos { background: var(--red-bg); border-color: var(--red); }
+
+.day-num { font-size: 12px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+.cal-day.today .day-num { color: var(--blue); }
+.day-moon { font-size: 16px; display: block; text-align: center; margin-bottom: 2px; }
+.day-events { display: flex; flex-direction: column; gap: 2px; }
+.day-pill {
+  font-size: 9px; font-weight: 500; padding: 1px 5px;
+  border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pill-plena  { background: var(--blue-bg); color: var(--blue); }
+.pill-nova   { background: var(--bg-sec); color: var(--text-sec); }
+.pill-asc    { background: var(--green-bg); color: var(--green); }
+.pill-desc   { background: var(--amber-bg); color: var(--amber); }
+.pill-gold   { background: var(--gold-bg); color: var(--gold); }
+.pill-repos  { background: var(--red-bg); color: var(--red); }
+.pill-sembra { background: var(--green-bg); color: var(--green); }
+.pill-arrels { background: var(--teal-bg); color: var(--teal); }
+.pill-trans  { background: var(--purple-bg); color: var(--purple); }
+
+/* PANEL DETALL */
+.detail-panel {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1.2rem;
+  margin-top: 1rem;
+}
+.detail-title { font-size: 15px; font-weight: 500; color: var(--text); margin-bottom: 1rem; }
+.detail-row { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.detail-row:last-child { border-bottom: none; }
+.detail-icon { font-size: 18px; min-width: 24px; }
+.detail-text .dt { font-size: 13px; font-weight: 500; color: var(--text); }
+.detail-text .dd { font-size: 12px; color: var(--text-sec); margin-top: 1px; }
+
+@media (max-width: 500px) {
+  .cal-day { min-height: 60px; padding: 4px; }
+  .day-moon { font-size: 13px; }
+  .day-pill { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo">
+      <span class="moon-ico">🌙</span>
+      <div>
+        Calendari Biodinàmic
+        <small>Hort lunar · Actualització automàtica</small>
+      </div>
+    </div>
+
+    <div class="current-box" id="current-box">
+      <div class="big" id="curr-icon">🌑</div>
+      <div class="phase-name" id="curr-name">Carregant...</div>
+      <div class="phase-detail" id="curr-detail"></div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-title">Llegenda</div>
+      <div class="legend-item"><div class="dot" style="background:#1a5fa8"></div> Lluna plena</div>
+      <div class="legend-item"><div class="dot" style="background:#6a6860"></div> Lluna nova</div>
+      <div class="legend-item"><div class="dot" style="background:#3a7a3a"></div> Sembra (lluna creixent)</div>
+      <div class="legend-item"><div class="dot" style="background:#0a6060"></div> Arrels i poda (minvant)</div>
+      <div class="legend-item"><div class="dot" style="background:#5a3a9a"></div> Transplantament</div>
+      <div class="legend-item"><div class="dot" style="background:#c17800"></div> Moment d'or 🏆</div>
+      <div class="legend-item"><div class="dot" style="background:#a02020"></div> Repòs total 🚫</div>
+    </div>
+
+    <div style="margin-top: auto; font-size: 11px; color: var(--text-ter); line-height: 1.6;">
+      Càlcul astronòmic al navegador.<br>
+      Clica qualsevol dia per veure el detall.
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="month-nav">
+      <button class="nav-btn" onclick="changeMonth(-1)">&#8592; Anterior</button>
+      <div style="text-align:center">
+        <h2 id="month-title"></h2>
+        <button class="today-btn" onclick="goToday()">Avui</button>
+      </div>
+      <button class="nav-btn" onclick="changeMonth(1)">Següent &#8594;</button>
+    </div>
+
+    <div class="weekdays">
+      <div class="weekday">Dl</div><div class="weekday">Dm</div>
+      <div class="weekday">Dc</div><div class="weekday">Dj</div>
+      <div class="weekday">Dv</div><div class="weekday">Ds</div>
+      <div class="weekday">Dg</div>
+    </div>
+
+    <div class="cal-grid" id="cal-grid"></div>
+
+    <div class="detail-panel" id="detail-panel" style="display:none">
+      <div class="detail-title" id="detail-title"></div>
+      <div id="detail-body"></div>
+    </div>
+  </main>
+</div>
+
+<script>
+// ── ASTRONOMIA ───────────────────────────────────────────────
+function julianDay(date) {
+  const Y = date.getUTCFullYear(), M = date.getUTCMonth()+1, D = date.getUTCDate();
+  const h = date.getUTCHours() + date.getUTCMinutes()/60;
+  return 367*Y - Math.floor(7*(Y+Math.floor((M+9)/12))/4) + Math.floor(275*M/9) + D + 1721013.5 + h/24;
+}
+
+function moonData(date) {
+  const JD = julianDay(date);
+  const T = (JD - 2451545.0) / 36525;
+  const r = Math.PI / 180;
+  const D  = (297.85036 + 445267.111480*T - 0.0019142*T*T) % 360;
+  const M  = (357.52772 + 35999.050340*T  - 0.0001603*T*T) % 360;
+  const Mp = (134.96298 + 477198.867398*T + 0.0086972*T*T) % 360;
+  const F  = (93.27191  + 483202.017538*T - 0.0036825*T*T) % 360;
+  const lon = (218.3165 + 481267.8813*T
+    + 6.289*Math.sin(Mp*r) - 1.274*Math.sin((2*D-Mp)*r)
+    + 0.658*Math.sin(2*D*r) - 0.214*Math.sin(2*Mp*r)
+    - 0.186*Math.sin(M*r)  - 0.114*Math.sin(2*F*r)
+    + 0.059*Math.sin((2*D-2*Mp)*r) + 0.057*Math.sin((2*D-M-Mp)*r)
+  ) % 360;
+  const lat = 5.128*Math.sin(F*r) + 0.281*Math.sin((Mp+F)*r)
+    - 0.280*Math.sin((Mp-F)*r) - 0.173*Math.sin((2*D-F)*r)
+    + 0.173*Math.sin((2*D-Mp-F)*r);
+  const sunLon = (280.46646 + 36000.76983*T) % 360;
+  const phase = ((lon - sunLon) % 360 + 360) % 360;
+  // Distància aproximada (km)
+  const dist = Math.round(385000 + 20905*Math.cos(Mp*r) + 3699*Math.cos((2*D-Mp)*r) + 2956*Math.cos(2*D*r));
+  return { lon: (lon%360+360)%360, lat, phase, dist };
+}
+
+const SIGNS = ['Àries','Taure','Bessons','Cranc','Lleó','Verge','Balança','Escorpí','Sagitari','Capricorn','Aquari','Peixos'];
+const SIGN_ELEM = { 'Àries':'Foc','Lleó':'Foc','Sagitari':'Foc', 'Taure':'Terra','Verge':'Terra','Capricorn':'Terra', 'Bessons':'Aire','Balança':'Aire','Aquari':'Aire', 'Cranc':'Aigua','Escorpí':'Aigua','Peixos':'Aigua' };
+function getSign(lon) { return SIGNS[Math.floor(((lon%360)+360)/30)]; }
+
+function moonEmoji(phase) {
+  if (phase < 22.5 || phase >= 337.5) return '🌑';
+  if (phase < 67.5)  return '🌒';
+  if (phase < 112.5) return '🌓';
+  if (phase < 157.5) return '🌔';
+  if (phase < 202.5) return '🌕';
+  if (phase < 247.5) return '🌖';
+  if (phase < 292.5) return '🌗';
+  return '🌘';
+}
+function phaseName(phase) {
+  if (phase < 22.5 || phase >= 337.5) return 'Lluna nova';
+  if (phase < 90)  return 'Lluna creixent';
+  if (phase < 112.5) return 'Quart creixent';
+  if (phase < 157.5) return 'Gibosa creixent';
+  if (phase < 202.5) return 'Lluna plena';
+  if (phase < 270)   return 'Lluna minvant';
+  if (phase < 292.5) return 'Quart minvant';
+  return 'Lluna minvant';
+}
+function illum(phase) { return Math.round(50*(1 - Math.cos(phase * Math.PI/180))); }
+
+// ── CÀLCUL D'ESDEVENIMENTS PER UN RANG ────────────────────────
+function computeEvents(startDate, endDate) {
+  const STEP = 2 * 3600 * 1000; // 2h en ms
+  const events = { nodes: [], fases: [], tendency: [] };
+
+  let prev = null;
+  let prevDiff = null;
+  let prevPhaseSide = null; // per detectar creuament de 0/180
+
+  for (let t = startDate.getTime(); t <= endDate.getTime(); t += STEP) {
+    const d = new Date(t);
+    const m = moonData(d);
+    if (prev) {
+      // NODES (creuament latitud = 0)
+      if (prev.lat < 0 && m.lat >= 0) events.nodes.push({ date: new Date(t), type: 'Node Ascendent' });
+      if (prev.lat >= 0 && m.lat < 0) events.nodes.push({ date: new Date(t), type: 'Node Descendent' });
+      // Màxims/mínims de latitud
+      const diff = m.lat - prev.lat;
+      if (prevDiff !== null && prevDiff * diff < 0) {
+        events.nodes.push({ date: new Date(t), type: prevDiff > 0 ? 'Latitud màxima' : 'Latitud mínima' });
+      }
+      prevDiff = diff;
+      // FASES: lluna plena (phase ≈ 180) i nova (phase ≈ 0/360)
+      if (Math.abs(m.phase - 180) < 2 && Math.abs(prev.phase - 180) >= 2) {
+        events.fases.push({ date: new Date(t), type: 'Lluna Plena', sign: getSign(m.lon) });
+      }
+      if ((prev.phase > 350 && m.phase < 10) || (Math.abs(m.phase) < 2 && Math.abs(prev.phase) >= 2)) {
+        events.fases.push({ date: new Date(t), type: 'Lluna Nova', sign: getSign(m.lon) });
+      }
+    }
+    prev = m;
+  }
+
+  // TENDÈNCIA DISTÀNCIA (cada dia)
+  let prevDist = null, prevTend = null;
+  for (let t = startDate.getTime(); t <= endDate.getTime(); t += 24*3600*1000) {
+    const d = new Date(t);
+    const m = moonData(d);
+    if (prevDist !== null) {
+      const tend = m.dist < prevDist ? 'acostar' : 'allunyar';
+      if (tend !== prevTend) {
+        events.tendency.push({ date: new Date(t - 24*3600*1000), type: tend, dist: prevDist });
+        prevTend = tend;
+      }
+    }
+    prevDist = m.dist;
+  }
+
+  return events;
+}
+
+// ── RECOMANACIONS PER DIA ─────────────────────────────────────
+function getDayRecs(date, events) {
+  const dStr = dateStr(date);
+  const recs = [];
+
+  // Lluna plena o nova
+  const fase = events.fases.find(f => dateStr(f.date) === dStr);
+  if (fase) recs.push({ type: fase.type === 'Lluna Plena' ? 'plena' : 'nova', label: fase.type + ' en ' + fase.sign });
+
+  // Node
+  const node = events.nodes.find(n => dateStr(n.date) === dStr);
+  if (node) recs.push({ type: node.type.includes('Ascend') ? 'asc' : node.type.includes('Descend') ? 'desc' : 'nova', label: node.type });
+
+  const m = moonData(date);
+  const phase = m.phase;
+
+  // Repòs total: dia de node o tendència nova
+  const isRepos = !!node || events.tendency.some(t => dateStr(t.date) === dStr);
+  if (isRepos) recs.push({ type: 'repos', label: '🚫 Repòs total' });
+
+  if (!isRepos) {
+    // Sembra: lluna creixent (0–180)
+    if (phase > 10 && phase < 170) recs.push({ type: 'sembra', label: '🌱 Sembra fulles/fruits' });
+    // Arrels i poda: lluna minvant (180–360)
+    if (phase > 190 && phase < 350) recs.push({ type: 'arrels', label: '🥕 Arrels · Poda' });
+
+    // Transplantament: lluna s'allunya
+    const tendIdx = events.tendency.findIndex(t => t.date <= date);
+    const currTend = tendIdx >= 0 ? events.tendency[tendIdx] : null;
+    // Find active tendency for this day
+    let activeTend = null;
+    for (let i = events.tendency.length-1; i >= 0; i--) {
+      if (events.tendency[i].date <= date) { activeTend = events.tendency[i]; break; }
+    }
+    if (activeTend && activeTend.type === 'allunyar' && !isRepos) {
+      recs.push({ type: 'trans', label: '🌳 Transplantament' });
+    }
+
+    // Moment d'or: minvant + s'allunya
+    if (phase > 190 && phase < 350 && activeTend && activeTend.type === 'allunyar') {
+      recs.push({ type: 'gold', label: '🏆 Moment d\'or' });
+    }
+  }
+
+  return { recs, isRepos, phase: m.phase, dist: m.dist, sign: getSign(m.lon), lat: m.lat };
+}
+
+function dateStr(d) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+// ── ESTAT ─────────────────────────────────────────────────────
+const today = new Date();
+today.setHours(12,0,0,0);
+let viewYear = today.getFullYear();
+let viewMonth = today.getMonth();
+let selectedDate = null;
+
+// Pre-calcular 14 mesos endavant
+const eventsStart = new Date(today); eventsStart.setDate(1); eventsStart.setMonth(eventsStart.getMonth()-1);
+const eventsEnd = new Date(today); eventsEnd.setMonth(eventsEnd.getMonth()+13); eventsEnd.setDate(0);
+const EVENTS = computeEvents(eventsStart, eventsEnd);
+
+// ── SIDEBAR FASE ACTUAL ───────────────────────────────────────
+function renderSidebar() {
+  const m = moonData(today);
+  document.getElementById('curr-icon').textContent = moonEmoji(m.phase);
+  document.getElementById('curr-name').textContent = phaseName(m.phase);
+  document.getElementById('curr-detail').textContent =
+    getSign(m.lon) + ' · ' + illum(m.phase) + '% il·luminació · ' + m.dist.toLocaleString('ca-ES') + ' km';
+}
+
+// ── CALENDARI ─────────────────────────────────────────────────
+const MONTHS_CA = ['Gener','Febrer','Març','Abril','Maig','Juny','Juliol','Agost','Setembre','Octubre','Novembre','Desembre'];
+
+function renderCalendar() {
+  document.getElementById('month-title').textContent = MONTHS_CA[viewMonth] + ' ' + viewYear;
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+
+  const firstDay = new Date(viewYear, viewMonth, 1);
+  // Dl=0 ... Dg=6
+  let startDow = (firstDay.getDay() + 6) % 7;
+  const daysInMonth = new Date(viewYear, viewMonth+1, 0).getDate();
+  const prevDays = new Date(viewYear, viewMonth, 0).getDate();
+  const totalCells = Math.ceil((startDow + daysInMonth) / 7) * 7;
+
+  for (let i = 0; i < totalCells; i++) {
+    let d, isOther = false;
+    if (i < startDow) {
+      d = new Date(viewYear, viewMonth-1, prevDays - startDow + i + 1);
+      isOther = true;
+    } else if (i >= startDow + daysInMonth) {
+      d = new Date(viewYear, viewMonth+1, i - startDow - daysInMonth + 1);
+      isOther = true;
+    } else {
+      d = new Date(viewYear, viewMonth, i - startDow + 1);
+    }
+    d.setHours(12,0,0,0);
+    grid.appendChild(createDayCell(d, isOther));
+  }
+}
+
+function createDayCell(date, isOther) {
+  const cell = document.createElement('div');
+  cell.className = 'cal-day' + (isOther ? ' other-month' : '');
+  if (dateStr(date) === dateStr(today)) cell.classList.add('today');
+  if (selectedDate && dateStr(date) === dateStr(selectedDate)) cell.classList.add('selected');
+
+  const info = getDayRecs(date, EVENTS);
+  if (info.isRepos) cell.classList.add('repos');
+
+  const m = moonData(date);
+
+  cell.innerHTML = `<div class="day-num">${date.getDate()}</div>
+    <span class="day-moon">${moonEmoji(m.phase)}</span>
+    <div class="day-events">${info.recs.slice(0,3).map(r => `<div class="day-pill pill-${r.type}">${r.label}</div>`).join('')}</div>`;
+
+  cell.addEventListener('click', () => {
+    selectedDate = date;
+    renderCalendar();
+    showDetail(date, info, m);
+  });
+  return cell;
+}
+
+// ── DETALL DIA ────────────────────────────────────────────────
+function showDetail(date, info, m) {
+  const panel = document.getElementById('detail-panel');
+  const dN = date.toLocaleDateString('ca-ES', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  document.getElementById('detail-title').textContent = dN.charAt(0).toUpperCase() + dN.slice(1);
+
+  const rows = [];
+  // Fase
+  rows.push({ icon: moonEmoji(m.phase), dt: phaseName(m.phase), dd: `Il·luminació ${illum(m.phase)}% · Signe ${info.sign} (${SIGN_ELEM[info.sign]||''}) · Latitud ${m.lat.toFixed(2)}°` });
+  // Distància
+  rows.push({ icon: '📡', dt: 'Distància Terra–Lluna', dd: m.dist.toLocaleString('ca-ES') + ' km' });
+  // Events del dia
+  info.recs.forEach(r => {
+    const descs = {
+      plena: 'Lluna plena: màxima força. Bon moment per collir.',
+      nova:  'Lluna nova: descans. Reps de terra. Poca activitat.',
+      asc:   'Node ascendent: la Lluna creua l\'eclíptica cap amunt.',
+      desc:  'Node descendent: la Lluna creua l\'eclíptica cap avall.',
+      repos: 'Evita sembrar, podar o trasplantar avui.',
+      sembra:'La saba puja: ideal per sembrar espinacs, enciam, tomàquets, herbes.',
+      arrels:'La saba baixa: millor per a pastanagues, cebes, alls, poda de control.',
+      trans: 'La Lluna s\'allunya: la saba va als arrels, ideal per trasplantar.',
+      gold:  'Lluna minvant + saba descendent: poda profunda i esqueixos que arrelen fort.',
+    };
+    rows.push({ icon: r.label.split(' ')[0], dt: r.label.replace(/^.+?\s/, ''), dd: descs[r.type] || '' });
+  });
+
+  document.getElementById('detail-body').innerHTML = rows.map(r => `
+    <div class="detail-row">
+      <div class="detail-icon">${r.icon}</div>
+      <div class="detail-text"><div class="dt">${r.dt}</div><div class="dd">${r.dd}</div></div>
+    </div>`).join('');
+  panel.style.display = '';
+}
+
+// ── CONTROLS ──────────────────────────────────────────────────
+function changeMonth(delta) {
+  viewMonth += delta;
+  if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+  if (viewMonth < 0)  { viewMonth = 11; viewYear--; }
+  renderCalendar();
+  document.getElementById('detail-panel').style.display = 'none';
+}
+function goToday() {
+  viewYear = today.getFullYear();
+  viewMonth = today.getMonth();
+  selectedDate = null;
+  renderCalendar();
+  document.getElementById('detail-panel').style.display = 'none';
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+renderSidebar();
+renderCalendar();
+</script>
+</body>
+</html>
